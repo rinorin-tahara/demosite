@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Wavy Sphere</title>
+<title>Wavy Sphere Fixed</title>
 <style>
   body { margin: 0; overflow: hidden; background: #000; }
 </style>
@@ -28,25 +28,27 @@ function init() {
   );
   camera.position.z = 3;
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true
+  });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // 球体（細かく分割がポイント）
+  // ★分割数多め（超重要）
   const geometry = new THREE.SphereGeometry(1, 128, 128);
 
   const material = new THREE.MeshStandardMaterial({
     color: 0x00ffcc,
     roughness: 0.3,
-    metalness: 0.1,
-    wireframe: false
+    metalness: 0.1
   });
 
   sphere = new THREE.Mesh(geometry, material);
   scene.add(sphere);
 
   // ライト
-  const light = new THREE.PointLight(0xffffff, 1);
+  const light = new THREE.PointLight(0xffffff, 1.2);
   light.position.set(5, 5, 5);
   scene.add(light);
 
@@ -62,8 +64,6 @@ function animate() {
   requestAnimationFrame(animate);
 
   const time = clock.getElapsedTime();
-
-  // 頂点をぐにゃぐにゃ変形
   const position = sphere.geometry.attributes.position;
 
   for (let i = 0; i < position.count; i++) {
@@ -71,12 +71,14 @@ function animate() {
     let y = position.getY(i);
     let z = position.getZ(i);
 
-    // ノイズ風の変形
-    const offset = Math.sin(x * 2 + time) * 0.1 +
-                   Math.sin(y * 2 + time) * 0.1 +
-                   Math.sin(z * 2 + time) * 0.1;
-
+    // 法線方向
     const normal = new THREE.Vector3(x, y, z).normalize();
+
+    // ★ぐにゃぐにゃの核
+    const offset =
+      Math.sin(x * 3 + time) * 0.2 +
+      Math.sin(y * 3 + time) * 0.2 +
+      Math.sin(z * 3 + time) * 0.2;
 
     position.setXYZ(
       i,
@@ -86,8 +88,13 @@ function animate() {
     );
   }
 
+  // ★更新必須
   position.needsUpdate = true;
 
+  // ★これがないと変形が綺麗に出ない
+  sphere.geometry.computeVertexNormals();
+
+  // 回転
   sphere.rotation.y += 0.003;
 
   renderer.render(scene, camera);
