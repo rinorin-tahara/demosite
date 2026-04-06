@@ -6,20 +6,26 @@
 
 <script>
 const scene = new THREE.Scene();
+
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
 camera.position.z = 3;
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const geo = new THREE.SphereGeometry(1, 128, 128);
-const base = geo.attributes.position.array.slice();
+// 球（分割多め）
+const geometry = new THREE.SphereGeometry(1, 128, 128);
 
-geo.attributes.position.setUsage(THREE.DynamicDrawUsage);
+// 元の形を保存
+const base = geometry.attributes.position.array.slice();
 
-const mat = new THREE.MeshNormalMaterial();
-const mesh = new THREE.Mesh(geo, mat);
+// ★これ重要
+geometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
+
+const material = new THREE.MeshNormalMaterial();
+
+const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
 const clock = new THREE.Clock();
@@ -28,27 +34,30 @@ function animate() {
   requestAnimationFrame(animate);
 
   const t = clock.getElapsedTime();
-  const pos = geo.attributes.position;
+  const pos = geometry.attributes.position;
 
   for (let i = 0; i < pos.count; i++) {
-    let x = base[i*3];
-    let y = base[i*3+1];
-    let z = base[i*3+2];
 
-    const len = Math.sqrt(x*x+y*y+z*z);
+    const x = base[i*3];
+    const y = base[i*3+1];
+    const z = base[i*3+2];
 
-    const offset = Math.sin(len*10 + t) * 0.3;
+    const length = Math.sqrt(x*x + y*y + z*z);
 
-    pos.setXYZ(i,
-      x*(1+offset),
-      y*(1+offset),
-      z*(1+offset)
+    // ★ここが変形
+    const offset = Math.sin(length * 8 + t) * 0.3;
+
+    pos.setXYZ(
+      i,
+      x * (1 + offset),
+      y * (1 + offset),
+      z * (1 + offset)
     );
   }
 
   pos.needsUpdate = true;
 
-  mesh.rotation.y += 0.005;
+  mesh.rotation.y += 0.01;
 
   renderer.render(scene, camera);
 }
